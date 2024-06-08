@@ -58,14 +58,20 @@ def on_press(key):
             cursor_top = 0
 
     if key == keyboard.Key.space:
-        update_buffer(" ")
+        add_to_buffer(" ")
+
+    if key == keyboard.Key.backspace:
+        delete_from_buffer()
+
     if key == keyboard.Key.f2:
         save_files()
         return
 
     try:
-        just_symbol = key.char
-        update_buffer(key.char)
+        add_to_buffer(key.char)
+        cursor_left = cursor_left + 1
+        if cursor_left >= restrictions.columns:
+            cursor_left = restrictions.columns - 1
 
     except AttributeError:
         print_info(key)
@@ -90,7 +96,7 @@ def spaces(times):
     return s
 
 
-def update_buffer(char):
+def add_to_buffer(char):
     global buffer
     global cursor_left
     global cursor_top
@@ -100,8 +106,29 @@ def update_buffer(char):
         buffer = buffer[:buffer_shift] + char + buffer[buffer_shift:]
 
 
+def delete_from_buffer():
+    global buffer
+    global cursor_left
+    global cursor_top
+    global restrictions
+    buffer_shift = restrictions.columns * cursor_top + cursor_left
+    if buffer_shift > 0:
+        buffer = buffer[:buffer_shift - 1] + buffer[buffer_shift:]
+        cursor_left -= 1
+        if cursor_left < 0:
+            cursor_left = 0
+
+
+def clear_screen():
+    if sys.platform == "win32":
+        system('cls')
+    else:
+        system('clear')
+
+
 def on_release(key):
     if key == keyboard.Key.esc:
+        clear_screen()
         # Stop listener
         return False
 
@@ -113,7 +140,7 @@ if n < 2:
     sys.exit()
 
 f = open(sys.argv[1], "r")
-system('cls')
+system('cls' if sys.platform == 'win32' else 'clear')
 buffer = f.read()
 f.close()
 
