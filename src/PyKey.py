@@ -4,7 +4,9 @@ from os import system
 from pynput import keyboard
 
 restrictions = get_terminal_size()
-
+cursor_left = 0
+cursor_top = 0
+help = 0
 
 def print_there(x, y, text):
     global cursor_left
@@ -19,10 +21,6 @@ def print_info(text):
     print_there(restrictions.lines - 1, 0, text)
 
 
-cursor_left = 0
-cursor_top = 0
-
-
 def refresh_screen():
     global cursor_left
     global cursor_top
@@ -33,10 +31,21 @@ def refresh_screen():
     sys.stdout.flush()
 
 
+def show_help():
+    help_message = ('F2 - save file\
+     F1 - continue editing\
+     DOWN,UP,RIGHT,LEFT - move the cursor\
+     BACKSPACE - delete symbol\
+     SHIFT - go to the next part of the text\
+     ESC - exit') # todo shift
+    print_info(help_message)
+
+
 def on_press(key):
     global cursor_left
     global cursor_top
     global restrictions
+    global help
     if key == keyboard.Key.right:
         cursor_left = cursor_left + 1
         if cursor_left >= restrictions.columns:
@@ -63,6 +72,14 @@ def on_press(key):
     if key == keyboard.Key.backspace:
         delete_from_buffer()
 
+    if key == keyboard.Key.f1:
+        if help == 0:
+            show_help()
+            help = 1
+        else:
+            clear_screen()
+            help = 0
+
     if key == keyboard.Key.f2:
         save_files()
         return
@@ -74,7 +91,7 @@ def on_press(key):
             cursor_left = restrictions.columns - 1
 
     except AttributeError:
-        print_info(key)
+        pass  # print_info(key)
     refresh_screen()
 
 
@@ -134,15 +151,16 @@ def on_release(key):
 
 
 n = len(sys.argv)
-print("Total arguments passed:", n)
+
 if n < 2:
     print("usage: py pykey.py [file to edit]")
     sys.exit()
 
-f = open(sys.argv[1], "r")
-system('cls' if sys.platform == 'win32' else 'clear')
-buffer = f.read()
-f.close()
+buffer = ''
+
+with open(sys.argv[1], "r") as file:
+    for line in file:
+        buffer += line
 
 print_there(0, 0, buffer)
 
