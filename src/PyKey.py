@@ -3,12 +3,19 @@ from shutil import get_terminal_size
 from os import system
 from pynput import keyboard
 
+# Получаем размеры терминала
 restrictions = get_terminal_size()
 cursor_left = 0
 cursor_top = 0
 help = 0
 
+
 def print_there(x, y, text):
+    """
+    Функция для вывода текста на определенную позицию в терминале.
+    x, y - координаты строки и столбца.
+
+    """
     global cursor_left
     global cursor_top
     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
@@ -17,11 +24,19 @@ def print_there(x, y, text):
 
 
 def print_info(text):
+    """
+    Функция для вывода информации в нижней части экрана.
+
+    """
     global restrictions
     print_there(restrictions.lines - 1, 0, text)
 
 
 def refresh_screen():
+    """
+    Обновление экрана и установка курсора на последнюю позицию.
+
+    """
     global cursor_left
     global cursor_top
     global buffer
@@ -32,16 +47,24 @@ def refresh_screen():
 
 
 def show_help():
+    """
+    Показ справочной информации о горячих клавишах.
+
+    """
     help_message = ('F2 - save file\
      F1 - continue editing\
      DOWN,UP,RIGHT,LEFT - move the cursor\
      BACKSPACE - delete symbol\
      SHIFT - go to the next part of the text\
-     ESC - exit') # todo shift
+     ESC - exit')  # todo shift
     print_info(help_message)
 
 
 def on_press(key):
+    """
+    Обработка нажатия клавиш.
+
+    """
     global cursor_left
     global cursor_top
     global restrictions
@@ -91,29 +114,38 @@ def on_press(key):
             cursor_left = restrictions.columns - 1
 
     except AttributeError:
-        pass  # print_info(key)
+        pass  # Необрабатываемые клавиши
+
     refresh_screen()
 
 
 def save_files():
+    """
+    Сохранение буфера в файл.
+
+    """
     global buffer
     try:
-        file = open(sys.argv[1], "w")
-        file.write(buffer)
-        file.close()
+        with open(sys.argv[1], "w") as file:
+            file.write(buffer)
         print_info("file {0} saved successfully".format(sys.argv[1]))
     except Exception as e:
         print_there(restrictions.lines - 1, 0, repr(e))
 
 
 def spaces(times):
-    s = ''
-    for i in range(times):
-        s += ' '
-    return s
+    """
+    Генерация строки из пробелов.
+
+    """
+    return ' ' * times
 
 
 def add_to_buffer(char):
+    """
+    Добавление символа в буфер.
+
+    """
     global buffer
     global cursor_left
     global cursor_top
@@ -124,6 +156,10 @@ def add_to_buffer(char):
 
 
 def delete_from_buffer():
+    """
+    Удаление символа из буфера.
+
+    """
     global buffer
     global cursor_left
     global cursor_top
@@ -137,6 +173,10 @@ def delete_from_buffer():
 
 
 def clear_screen():
+    """
+    Очистка экрана терминала.
+
+    """
     if sys.platform == "win32":
         system('cls')
     else:
@@ -144,26 +184,29 @@ def clear_screen():
 
 
 def on_release(key):
+    """
+    Обработка отпускания клавиш.
+
+    """
     if key == keyboard.Key.esc:
         clear_screen()
-        # Stop listener
+        # Остановка слушателя
         return False
 
 
-n = len(sys.argv)
-
-if n < 2:
+if len(sys.argv) < 2:
     print("usage: py pykey.py [file to edit]")
     sys.exit()
 
 buffer = ''
 
+# Чтение содержимого файла в буфер
 with open(sys.argv[1], "r") as file:
     for line in file:
         buffer += line
 
 print_there(0, 0, buffer)
 
-# Collect events until released
+# Сбор событий до тех пор, пока не будет выпущена клавиша
 with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
     listener.join()
