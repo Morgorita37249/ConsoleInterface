@@ -5,6 +5,7 @@ from pynput import keyboard
 
 # Получаем размеры терминала
 restrictions = get_terminal_size()
+buffer = ''
 cursor_left = 0
 cursor_top = 0
 help = 0
@@ -194,19 +195,23 @@ def on_release(key):
         return False
 
 
-if len(sys.argv) < 2:
-    print("usage: py pykey.py [file to edit]")
-    sys.exit()
+def main():
+    global buffer
+    if len(sys.argv) < 2:
+        print("usage: py pykey.py [file to edit]")
+        sys.exit()
 
-buffer = ''
+    # Чтение содержимого файла в буфер
+    with open(sys.argv[1], "r") as file:
+        for line in file:
+            buffer += line
 
-# Чтение содержимого файла в буфер
-with open(sys.argv[1], "r") as file:
-    for line in file:
-        buffer += line
+    print_there(0, 0, buffer)
 
-print_there(0, 0, buffer)
+    # Сбор событий до тех пор, пока не будет выпущена клавиша
+    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
 
-# Сбор событий до тех пор, пока не будет выпущена клавиша
-with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-    listener.join()
+
+if __name__ == "__main__":
+    main()
